@@ -93,6 +93,7 @@ MonoBehaviour:
   SprintDuration: 5
   Gravity: -15
   SprintImage: {fileID: 0}
+  Amulet: {fileID: 6512912372415269570, guid: d81b5d7e34e9d6248a316cab4695f5a6, type: 3}
 --- !u!1 &3902442059611857893
 GameObject:
   m_ObjectHideFlags: 0

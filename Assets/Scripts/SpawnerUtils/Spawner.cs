@@ -1,8 +1,7 @@
 using UnityEngine;
 
 public abstract class Spawner : MonoBehaviour
-{
-    [SerializeField] private BoxCollider SpawnArea;
+{ 
     [SerializeField, Min(1)] private int MaxRetries = 5;
 
     [Header("Position Validation")]
@@ -11,11 +10,16 @@ public abstract class Spawner : MonoBehaviour
     [Range(-1, 0)] [SerializeField] private float OffsetFromGround = -0.5f;
 
     protected float ObjectHalfHeight { get; set; }
+    private BoxCollider SpawnArea;
 
     private void OnValidate()
     {
+        SpawnArea = GameObject.FindGameObjectWithTag("SpawnArea").GetComponent<BoxCollider>();
+
         if (SpawnArea == null)
-            Debug.LogWarning($"{name}: SpawnArea is not assigned.", this);
+        {
+            Debug.LogWarning("No 'SpawnArea' tag was found.");
+        }
     }
 
     public bool TryGetValidPosition(out Vector3 position)

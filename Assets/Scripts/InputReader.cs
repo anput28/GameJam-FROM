@@ -5,8 +5,12 @@ public class InputReader : MonoBehaviour, InputSystem.IPlayerActions
 {
     public Vector2 LookInput { get; private set; }
     public bool IsLookFromGamepad { get; private set; }
+
     public Vector2 MoveInput { get; private set; }
     public bool IsSprinting { get; private set; }
+
+    public bool IsInteracting { get; private set; }
+
 
     private InputSystem _inputSystem;
 
@@ -35,14 +39,9 @@ public class InputReader : MonoBehaviour, InputSystem.IPlayerActions
 
     #region Input Callbacks
 
-    public void OnAttack(InputAction.CallbackContext context)
-    {
-        throw new System.NotImplementedException();
-    }
-
     public void OnInteract(InputAction.CallbackContext context)
     {
-        throw new System.NotImplementedException();
+        IsInteracting = context.ReadValueAsButton();
     }
 
     public void OnJump(InputAction.CallbackContext context)

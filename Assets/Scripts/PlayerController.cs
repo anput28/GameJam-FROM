@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -20,15 +21,21 @@ public class PlayerController : MonoBehaviour
     [Header("UI")]
     [SerializeField] private Image SprintImage;
 
+    // Movement variables
     private float _lookRotation = 0f;
+    private float _sprintTimeElapsed = 0f;
     private Vector3 _velocity = Vector3.zero;
+    private bool _isExhausted = false;
     private bool _isGrounded = false;
 
-    private float _sprintTimeElapsed = 0f;
-    private bool _isExhausted = false;
+    // Amulet collection variables
+    private Amulet _collectibleAmulet = null;
+    private int _amuletCount = 0;
 
     private CharacterController _cc;
     private InputReader _inputReader;
+    
+    public static event Action<Amulet, int> OnAmuletCollected;
 
     #region Unity Lifecycle Hooks
     private void Awake()
@@ -48,6 +55,7 @@ public class PlayerController : MonoBehaviour
     {
         Look();
         Move();
+        CollectAmulet();
     }
 
     private void OnApplicationFocus(bool focus)
@@ -56,6 +64,18 @@ public class PlayerController : MonoBehaviour
         {
             LockCursor();
         }
+    }
+
+    private void OnEnable()
+    {
+        Amulet.OnPlayerEntered += SetCollectibleAmulet;
+        Amulet.OnPlayerExited += ForgetCollectibleAmulet;
+    }
+
+    private void OnDisable()
+    {
+        Amulet.OnPlayerEntered -= SetCollectibleAmulet;
+        Amulet.OnPlayerExited -= ForgetCollectibleAmulet;
     }
 
     #endregion
@@ -74,6 +94,8 @@ public class PlayerController : MonoBehaviour
         // Update the horizontal rotation (y-axis)
         transform.Rotate(Vector3.up * lookInput.x);
     }
+
+    #region Movement
 
     private void Move()
     {
@@ -143,6 +165,18 @@ public class PlayerController : MonoBehaviour
         return _velocity.y;
     }
 
+    #endregion
+    
+    private void CollectAmulet()
+    {
+        if (_inputReader.IsInteracting && _collectibleAmulet != null)
+        {          
+            _amuletCount++;
+            OnAmuletCollected?.Invoke(_collectibleAmulet, _amuletCount);
+            _collectibleAmulet = null;
+        }
+    }
+
     #region Utils
 
     private void LockCursor()
@@ -160,6 +194,21 @@ public class PlayerController : MonoBehaviour
         {
             float fillAmount = _sprintTimeElapsed / SprintDuration;
             SprintImage.fillAmount = Mathf.Clamp01(fillAmount);
+        }
+    }
+    #endregion
+
+    #region Amulet Event Handlers
+    private void SetCollectibleAmulet(Amulet amulet)
+    {
+        _collectibleAmulet = amulet;
+    }
+
+    private void ForgetCollectibleAmulet(Amulet amulet)
+    {
+        if (_collectibleAmulet == amulet)
+        {
+            _collectibleAmulet = null;
         }
     }
     #endregion
