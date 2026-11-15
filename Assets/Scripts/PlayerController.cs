@@ -18,8 +18,14 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float SprintDuration = 5f;
     [SerializeField] private float Gravity = -15f; // The real gravity is 9.81 m/s², but we can exaggerate it for gameplay purposes
 
+    [Header("Health")]
+    [SerializeField] private float Health = 100;
+    [SerializeField] private float DamageFlashAlpha = 0.5f;
+    [SerializeField] private float DamageImageResetFade = 2f;
+
     [Header("UI")]
     [SerializeField] private Image SprintImage;
+    [SerializeField] private Image DamageImage;
 
     // Movement variables
     private float _lookRotation = 0f;
@@ -30,7 +36,7 @@ public class PlayerController : MonoBehaviour
 
     // Amulet collection variables
     private Amulet _collectibleAmulet = null;
-    private int _amuletCount = 0;
+    private int _amuletCount = 0;    
 
     private CharacterController _cc;
     private InputReader _inputReader;
@@ -56,6 +62,7 @@ public class PlayerController : MonoBehaviour
         Look();
         Move();
         CollectAmulet();
+        HideDamageFlash();
     }
 
     private void OnApplicationFocus(bool focus)
@@ -177,6 +184,43 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    #region Health Management
+    public void TakeDamage(float damage)
+    {
+        Health -= damage;
+
+        ShowDamageFlash();
+        Debug.Log($"Colore dopo il danno: {DamageImage.color}");
+
+        if (Health <= 0)
+        {
+            Die();
+        }
+    }
+
+    private void Die()
+    {
+        Debug.Log("Player has died.");
+    }
+
+    private void ShowDamageFlash()
+    {
+        Color c = DamageImage.color;
+        c.a = DamageFlashAlpha;
+        DamageImage.color = c;
+    }
+
+    private void HideDamageFlash()
+    {
+        if (DamageImage.color.a > 0f)
+        {
+            Color c = DamageImage.color;
+            c.a = Mathf.MoveTowards(c.a, 0f, DamageImageResetFade * Time.deltaTime);
+            DamageImage.color = c;
+        }
+    }
+    #endregion
+
     #region Utils
 
     private void LockCursor()
@@ -212,4 +256,5 @@ public class PlayerController : MonoBehaviour
         }
     }
     #endregion
+
 }

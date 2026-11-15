@@ -9,7 +9,7 @@ public class Portal : Spawner
 
     public override void PerformSpawn(GameObject objectToSpawn)
     {
-        if (!TryGetValidPosition(out Vector3 randomPosition))
+        if (!TryGetValidPose(out Vector3 randomPos, out _))
         {
             Debug.LogWarning($"teleportation of object {objectToSpawn} failed.");
             return;
@@ -18,7 +18,7 @@ public class Portal : Spawner
         if (objectToSpawn.TryGetComponent(out CharacterController cc))
         {
             cc.enabled = false;
-            objectToSpawn.transform.position = randomPosition;
+            objectToSpawn.transform.position = randomPos;
             cc.enabled = true;
         }
     }
