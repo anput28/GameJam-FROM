@@ -300,7 +300,8 @@ public class PlayerController : MonoBehaviour
     { 
         if (_grabbedEnemy == null) return;
 
-        Vector3 holdPoint = CameraTransform.position + CameraTransform.forward * HoldDistance;
+        float holdDistance = Mathf.Min(HoldDistance, _grabbedEnemy.AttackReach * 0.9f);
+        Vector3 holdPoint = CameraTransform.position + CameraTransform.forward * holdDistance;
 
         // Use exponential smoothing to make the enemy follow the hold point smoothly
         float t = 1f - Mathf.Exp(-HoldFollowSpeed * Time.deltaTime);

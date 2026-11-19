@@ -7,6 +7,7 @@ TagManager:
   - SpawnArea
   - CollectiblesText
   - HintText
+  - Enemy
   layers:
   - Default
   - TransparentFX

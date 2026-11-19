@@ -28,6 +28,13 @@ public class Enemy : MonoBehaviour
     [Tooltip("After the launch, collisions are ignored for this duration to prevent the enemy from destroying itself against the player or the hand holding it.")]
     [SerializeField] private float ImpactGracePeriod = 0.1f;
 
+    [Header("Shockwave")]
+    [SerializeField] private float ShockwaveRadius = 6f;
+    [SerializeField] private LayerMask ShockwaveMask = ~0;
+
+    public float AttackReach => AttackRange;
+
+    private bool _hasImpacted; // Flag to avoid multiple shockwave triggers on the same impact
     private float _flightStartTime;
     private float _nextDamageTime;
     private float _nextRepathTime;
@@ -70,7 +77,11 @@ public class Enemy : MonoBehaviour
             case State.Chasing:
                 UpdateChasing();
                 break;
-            
+
+            case State.Grabbed:
+                TryAttack();
+                break;
+
             case State.Flying:
                 UpdateFlying();
                 break;
@@ -78,9 +89,17 @@ public class Enemy : MonoBehaviour
         }
     }
 
-    private void OnCollisionEnter(Collision collision) => HandleFlyingCollision();
+    private void OnCollisionEnter(Collision collision)
+    {
+        HandleFlyingCollision();
+    }
     private void OnCollisionStay(Collision collision) => HandleFlyingCollision();
 
+    private void OnDrawGizmosSelected()
+    {
+        Gizmos.color = new Color(1f, 0.5f, 0f, 0.6f);
+        Gizmos.DrawWireSphere(transform.position, ShockwaveRadius);
+    }
     #endregion
 
     #region Initialization
@@ -176,7 +195,24 @@ public class Enemy : MonoBehaviour
         if (_state != State.Flying) return;
         if (Time.time - _flightStartTime < ImpactGracePeriod) return;
 
+        if (_hasImpacted) return;
+        _hasImpacted = true;
+
+        Sockwave();
         Destroy(gameObject);
+    }
+
+    private void Sockwave()
+    {
+        Collider[] colliders = Physics.OverlapSphere(transform.position, ShockwaveRadius, ShockwaveMask, QueryTriggerInteraction.Ignore);
+        foreach (var collider in colliders)
+        {
+            Enemy other = collider.GetComponentInParent<Enemy>();
+            if (other != null && other != this)
+            {
+                Destroy(other.gameObject);
+            }
+        }
     }
     #endregion
 
