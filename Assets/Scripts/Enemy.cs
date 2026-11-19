@@ -225,9 +225,9 @@ public class Enemy : MonoBehaviour
         }
 
         // Snap the enemy to the NavMesh position
-        _rb.isKinematic = true;
         _rb.linearVelocity = Vector3.zero;
         _rb.angularVelocity = Vector3.zero;
+        _rb.isKinematic = true;
 
         transform.SetPositionAndRotation(hit.position, Quaternion.Euler(0f, transform.eulerAngles.y, 0f));
 
