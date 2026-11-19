@@ -10,6 +10,25 @@ public class ObjectsSpawner : Spawner
 
     private readonly List<Vector3> _spawnedPositions = new();
 
+    // Adds a minimum-distance check against already-spawned objects, on top of the base obstacle/player checks.
+    public override bool IsPositionValid(Vector3 position)
+    {
+        if (!base.IsPositionValid(position))
+        {
+            return false;
+        }
+
+        for (int i = 0; i < _spawnedPositions.Count; i++)
+        {
+            if ((position - _spawnedPositions[i]).sqrMagnitude < CheckRadius * CheckRadius)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     protected override void Awake()
     {
         base.Awake();

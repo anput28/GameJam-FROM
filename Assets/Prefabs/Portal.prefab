@@ -363,9 +363,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2164db53f51c030469d15d0fcb4122d0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Portal
-  SpawnArea: {fileID: 7640386973352084225, guid: acd45d31a56c861469112e606a3875b6, type: 3}
-  MaxRetries: 5
-  CheckRadius: 20
+  MaxRetries: 40
+  CheckRadius: 1
   ObstacleMask:
     serializedVersion: 2
     m_Bits: 64

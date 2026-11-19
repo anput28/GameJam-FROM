@@ -245,7 +245,6 @@ public class PlayerController : MonoBehaviour
         Health -= damage;
 
         ShowDamageFlash();
-        Debug.Log($"Colore dopo il danno: {DamageImage.color}");
 
         if (Health <= 0)
         {

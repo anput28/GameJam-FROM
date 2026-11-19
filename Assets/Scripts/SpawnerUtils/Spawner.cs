@@ -2,7 +2,7 @@ using UnityEngine;
 
 public abstract class Spawner : MonoBehaviour
 { 
-    [SerializeField, Min(1)] private int MaxRetries = 10;
+    [SerializeField, Min(1)] private int MaxRetries = 40;
 
     [Header("Position Validation")]
     [SerializeField, Min(0f)] protected float CheckRadius = 10.0f;
@@ -11,6 +11,7 @@ public abstract class Spawner : MonoBehaviour
 
     protected float ObjectHalfHeight { get; set; }
     private BoxCollider SpawnArea;
+    private Transform _player;
 
     // Terrain cache variables
     private Terrain _terrain;
@@ -24,6 +25,16 @@ public abstract class Spawner : MonoBehaviour
         if (SpawnArea == null)
         {
             Debug.LogWarning("No 'SpawnArea' tag was found.");
+        }
+
+        GameObject player = GameObject.FindGameObjectWithTag("Player");
+        if (player != null)
+        {
+            _player = player.transform;
+        }
+        else
+        {
+            Debug.LogWarning("No 'Player' tag was found.");
         }
 
         SetTerrainInfo();
@@ -89,13 +100,27 @@ public abstract class Spawner : MonoBehaviour
         // Adjust the position to be above the ground by the object's half height and any additional offset
         position = new Vector3(x, groundY, z) + normal * (ObjectHalfHeight + OffsetFromGround);
 
-        // Set the rotation to align with the terrain normal
-        rotation = Quaternion.FromToRotation(Vector3.up, normal);
+        // Align with the terrain normal, then apply a random yaw around that normal.
+        Quaternion align = Quaternion.FromToRotation(Vector3.up, normal);
+        Quaternion randomYaw = Quaternion.AngleAxis(Random.Range(0f, 360f), Vector3.up);
+        rotation = align * randomYaw;
     }
 
-    public bool IsPositionValid(Vector3 position)
+    public virtual bool IsPositionValid(Vector3 position)
     {
-        return !Physics.CheckSphere(position, CheckRadius, ObstacleMask, QueryTriggerInteraction.Collide);
+        // Reject positions that overlap obstacles.
+        if (Physics.CheckSphere(position, CheckRadius, ObstacleMask, QueryTriggerInteraction.Collide))
+        {
+            return false;
+        }
+
+        // Keep at least CheckRadius of distance from the player.
+        if (_player != null && (position - _player.position).sqrMagnitude < CheckRadius * CheckRadius)
+        {
+            return false;
+        }
+
+        return true;
     }
 
     public void SetSpawnArea(BoxCollider area)
