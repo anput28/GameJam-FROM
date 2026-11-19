@@ -20,10 +20,7 @@ public class ObjectsSpawner : Spawner
             else
                 ObjectHalfHeight = ObjectPrefab.transform.localScale.y / 2f;
         }
-    }
 
-    private void Start()
-    {
         PerformSpawn();
     }
 

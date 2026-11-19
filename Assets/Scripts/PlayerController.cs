@@ -23,6 +23,15 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float DamageFlashAlpha = 0.5f;
     [SerializeField] private float DamageImageResetFade = 2f;
 
+    [Header("Grab & Throw")]
+    [SerializeField] private float GrabRange = 15f;
+    [SerializeField] private float GrabRadius = 0.5f;
+    [SerializeField] private LayerMask GrabMask = ~0;
+    [SerializeField] private float HoldDistance = 3f;
+    [SerializeField] private float HoldFollowSpeed = 15f;
+    [SerializeField] private float ThrowSpeed = 25f;
+    [SerializeField, Range(0f, 0.5f)] private float ThrowUpwardBias = 0.1f;
+
     [Header("UI")]
     [SerializeField] private Image SprintImage;
     [SerializeField] private Image DamageImage;
@@ -36,7 +45,10 @@ public class PlayerController : MonoBehaviour
 
     // Amulet collection variables
     private Amulet _collectibleAmulet = null;
-    private int _amuletCount = 0;    
+    private int _amuletCount = 0;
+
+    // Grab variables
+    private Enemy _grabbedEnemy = null;
 
     private CharacterController _cc;
     private InputReader _inputReader;
@@ -65,6 +77,12 @@ public class PlayerController : MonoBehaviour
         HideDamageFlash();
     }
 
+    private void LateUpdate()
+    {
+        // Add LateUpdate to ensure that the grabbed enemy follows the player after all movement and rotation updates have been applied.
+        HoldGrabbedEnemy();
+    }
+
     private void OnApplicationFocus(bool focus)
     {
         if (focus && enabled)
@@ -77,12 +95,49 @@ public class PlayerController : MonoBehaviour
     {
         Amulet.OnPlayerEntered += SetCollectibleAmulet;
         Amulet.OnPlayerExited += ForgetCollectibleAmulet;
+
+        _inputReader.GrabPressed += TryGrabEnemy;
+        _inputReader.ThrowPressed += ThrowGrabbedEnemy;
     }
 
     private void OnDisable()
     {
         Amulet.OnPlayerEntered -= SetCollectibleAmulet;
         Amulet.OnPlayerExited -= ForgetCollectibleAmulet;
+
+        _inputReader.GrabPressed -= TryGrabEnemy;
+        _inputReader.ThrowPressed -= ThrowGrabbedEnemy;
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        if (CameraTransform == null) return;
+
+        Vector3 origin = CameraTransform.position;
+        Vector3 dir = CameraTransform.forward;
+        Vector3 end = origin + dir * GrabRange;
+
+        Gizmos.color = new Color(1f, 1f, 1f, 0.5f);
+        Gizmos.DrawWireSphere(origin, GrabRadius);
+        Gizmos.DrawWireSphere(end, GrabRadius);
+
+        Vector3 right = CameraTransform.right * GrabRadius;
+        Vector3 up = CameraTransform.up * GrabRadius;
+        Gizmos.DrawLine(origin + right, end + right);
+        Gizmos.DrawLine(origin - right, end - right);
+        Gizmos.DrawLine(origin + up, end + up);
+        Gizmos.DrawLine(origin - up, end - up);
+
+        if (!Application.isPlaying) return;
+
+        if (Physics.SphereCast(origin, GrabRadius, dir, out RaycastHit hit, GrabRange, GrabMask, QueryTriggerInteraction.Ignore))
+        {
+            bool isEnemy = hit.collider.GetComponentInParent<Enemy>() != null;
+            Gizmos.color = isEnemy ? Color.green : Color.red;
+
+            Gizmos.DrawWireSphere(origin + dir * hit.distance, GrabRadius);
+            Gizmos.DrawSphere(hit.point, 0.08f);
+        }
     }
 
     #endregion
@@ -219,6 +274,48 @@ public class PlayerController : MonoBehaviour
             DamageImage.color = c;
         }
     }
+    #endregion
+
+    #region Grab & Throw
+
+    private void TryGrabEnemy()
+    {
+        if (_grabbedEnemy != null) return;
+
+        Ray ray = new(CameraTransform.position, CameraTransform.forward);
+
+        if (!Physics.SphereCast(ray, GrabRadius, out RaycastHit hit, GrabRange, GrabMask, QueryTriggerInteraction.Ignore))
+            return;
+
+        Enemy enemy = hit.collider.GetComponentInParent<Enemy>();
+
+        // Grab() returns true if the enemy can be grabbed, false otherwise
+        if (enemy != null && enemy.Grab())
+        {
+            _grabbedEnemy = enemy;
+        }
+    }
+
+    private void HoldGrabbedEnemy()
+    { 
+        if (_grabbedEnemy == null) return;
+
+        Vector3 holdPoint = CameraTransform.position + CameraTransform.forward * HoldDistance;
+
+        // Use exponential smoothing to make the enemy follow the hold point smoothly
+        float t = 1f - Mathf.Exp(-HoldFollowSpeed * Time.deltaTime);
+        _grabbedEnemy.transform.position = Vector3.Lerp(_grabbedEnemy.transform.position, holdPoint, t);
+    }
+
+    private void ThrowGrabbedEnemy()
+    {
+        if (_grabbedEnemy == null) return;
+
+        Vector3 direction = (CameraTransform.forward + Vector3.up * ThrowUpwardBias).normalized;
+        _grabbedEnemy.Throw(direction * ThrowSpeed);
+        _grabbedEnemy = null;
+    }
+
     #endregion
 
     #region Utils

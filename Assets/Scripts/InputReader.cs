@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -11,6 +12,8 @@ public class InputReader : MonoBehaviour, InputSystem.IPlayerActions
 
     public bool IsInteracting { get; private set; }
 
+    public event Action GrabPressed;
+    public event Action ThrowPressed;
 
     private InputSystem _inputSystem;
 
@@ -67,6 +70,16 @@ public class InputReader : MonoBehaviour, InputSystem.IPlayerActions
     public void OnSprint(InputAction.CallbackContext context)
     {
         IsSprinting = context.ReadValueAsButton();
+    }
+
+    public void OnGrab(InputAction.CallbackContext context)
+    {
+        if (context.performed) GrabPressed?.Invoke();
+    }
+
+    public void OnThrow(InputAction.CallbackContext context)
+    {
+        if (context.performed) ThrowPressed?.Invoke();
     }
     #endregion
 }
