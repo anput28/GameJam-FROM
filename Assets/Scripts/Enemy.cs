@@ -8,7 +8,6 @@ public class Enemy : MonoBehaviour
     private enum State { WaitingForNavMesh, Chasing, Grabbed, Flying }
 
     [Header("Enemy Movement")]
-    [SerializeField] private Transform Target;
     [SerializeField, Min(1)] private int MinSpeed;
     [SerializeField, Min(1)] private int MaxSpeed;
     [SerializeField] private float RepathInterval = 0.2f;
@@ -42,6 +41,9 @@ public class Enemy : MonoBehaviour
     private State _state = State.WaitingForNavMesh;
     private NavMeshAgent _navMeshAgent;
     private Rigidbody _rb;
+
+    // Player reference
+    private Transform _target;
     private PlayerController _player;
 
     #region  Unity Lifecycle Hooks
@@ -105,24 +107,23 @@ public class Enemy : MonoBehaviour
     #region Initialization
     private void ResolveTarget()
     {
-        if (Target == null)
+        _player = FindAnyObjectByType<PlayerController>();
+        if (_player != null)
         {
-            _player = FindAnyObjectByType<PlayerController>();
-            if (_player != null)
+            _target = _player.transform;
+            if (_target != null)
             {
-                Target = _player.transform;
+                _target.TryGetComponent(out _player);
+            }
+            else
+            {
+                Debug.LogError($"Enemy {name}: No player transform found.");
             }
         }
         else
         {
-            Target.TryGetComponent(out _player);
+            Debug.LogError($"Enemy {name}: No PlayerController found.");
         }
-
-        if (Target == null)
-        {
-            Debug.LogError($"Enemy {name}: No target assigned and no GameObject with tag 'Player' found.");
-        }
-
     }
 
     private IEnumerator WaitForNavMeshRoutine()
@@ -151,15 +152,15 @@ public class Enemy : MonoBehaviour
 
     #endregion
 
-    #region Attack Logic
+    #region Chasing & Attack Logic
     private void UpdateChasing()
     {
-        if (Target == null || !_navMeshAgent.enabled || !_navMeshAgent.isOnNavMesh) return;
+        if (_target == null || !_navMeshAgent.enabled || !_navMeshAgent.isOnNavMesh) return;
 
         // Repath to the target at intervals
         if (Time.time >= _nextRepathTime)
         {
-            _navMeshAgent.SetDestination(Target.position);
+            _navMeshAgent.SetDestination(_target.position);
             _nextRepathTime = Time.time + RepathInterval;
         }
 
@@ -170,7 +171,7 @@ public class Enemy : MonoBehaviour
     {
         if (_player == null || Time.time < _nextDamageTime) return;
 
-        Vector3 delta = Target.position - transform.position;
+        Vector3 delta = _target.position - transform.position;
         delta.y = 0f;
 
         if (delta.sqrMagnitude <= AttackRange * AttackRange)
